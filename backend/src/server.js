@@ -1,22 +1,20 @@
 import dotenv from "dotenv";
-import express from "express";
-
+import connectDb from "./configs/DB/index.js"
+import { app } from "./app.js";
 
 dotenv.config({
   path: "/.env",
 });
-// here connect to DB 
-//then start the server
-
-const app = express();
 
 const port = process.env.PORT || 8080;
-console.log(port)
+// here connect to DB
+//then start the server
 
-app.get('/',(req,res)=>{
-    res.send("Hello, Dilip to Skill-Sphere AI Learning");
-})
-
-app.listen(port,()=>{
+connectDb()
+.then(() => {
+  app.listen(port, () => {
     console.log(`Server running at PORT: ${port}`);
-})
+  });
+}).catch((error)=>{
+  console.error("MongoDb to the Server connection error : ",error);
+});
