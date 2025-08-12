@@ -17,7 +17,13 @@ app.use(express.json({limit:"20kb"}));
 app.use(express.urlencoded({limit:"20kb",extended:true}))
 
 //for handling static data->img,videos,pdf,etc
-app.use(express.static)
+app.use(express.static('/public'))
 
 //use for req parsing cookies to the backend
 app.use(cookieParser())
+
+
+import authRouter from "./routes/auth.route.js"
+
+
+app.use("/api/v1/auths",authRouter);
