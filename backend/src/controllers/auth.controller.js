@@ -105,4 +105,12 @@ const loginUser = async (req, res) => {
     throw new ApiError(400, error.message);
   }
 };
-export { registerUser,loginUser };
+
+const feedVid = async(req,res)=>{
+  const user = req.user;
+
+  console.log(user);
+
+  return res.status(200).send(`{<pre>${JSON.stringify(user)}</pre>}`)
+}
+export { registerUser,loginUser,feedVid };
