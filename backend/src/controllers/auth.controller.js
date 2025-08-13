@@ -54,7 +54,7 @@ const loginUser = async (req, res) => {
     }
     //now check if email exist already or not
     const userExists = await User.findOne({
-      email
+      email,
     });
     //if not exists throw error saying user already exists
     if (!userExists) {
@@ -64,41 +64,41 @@ const loginUser = async (req, res) => {
     //check for valid password
     const isValidPassword = await userExists.isCorrectPassword(password);
 
-    if(!isValidPassword){
-        throw new ApiError(400,"Invalid Password")
+    if (!isValidPassword) {
+      throw new ApiError(400, "Invalid Password");
     }
-    
 
     //if exist generate access and refresh token
     const accessToken = await userExists.generateAccessToken();
     const refreshToken = await userExists.generateRefreshToken();
 
     // add refreshToken to the user document
-    const loginUser = await User.findById(userExists._id).select("-password")
-    //store this in the cookies 
+    const loginUser = await User.findByIdAndUpdate(userExists._id,{
+      refreshToken:refreshToken
+    }).select("-password -refreshToken");
+    //store this in the cookies
     console.log(loginUser);
 
     const AccessTokenOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV,
-    sameSite:"Strict",
-    // sameSite: "Strict",
-    maxAge:24*60*60*1000
-  };
-  const RefreshTokenOptions = {
-    httpOnly: true,
-    secure: true,
-    sameSite: "Strict" ,
-    // sameSite: "Strict",
-    maxAge:7*24*60*60*1000
-  };
+      httpOnly: true,
+      secure: process.env.NODE_ENV,
+      sameSite: "Strict",
+      // sameSite: "Strict",
+      maxAge: 24 * 60 * 60 * 1000,
+    };
+    const RefreshTokenOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+      // sameSite: "Strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    };
 
-  return res.status(200)
-  .cookie("accessToken",accessToken,AccessTokenOptions)
-  .cookie("refreshToken",refreshToken,RefreshTokenOptions)
-  .json(
-    new ApiResponse(200,loginUser,"User Login Successfully")
-  )
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, AccessTokenOptions)
+      .cookie("refreshToken", refreshToken, RefreshTokenOptions)
+      .json(new ApiResponse(200, loginUser, "User Login Successfully"));
     //
   } catch (error) {
     console.error(error);
@@ -106,11 +106,11 @@ const loginUser = async (req, res) => {
   }
 };
 
-const feedVid = async(req,res)=>{
+const feedVid = async (req, res) => {
   const user = req.user;
 
   console.log(user);
 
-  return res.status(200).send(`{<pre>${JSON.stringify(user)}</pre>}`)
-}
-export { registerUser,loginUser,feedVid };
+  return res.status(200).send(`{<pre>${JSON.stringify(user)}</pre>}`);
+};
+export { registerUser, loginUser, feedVid };

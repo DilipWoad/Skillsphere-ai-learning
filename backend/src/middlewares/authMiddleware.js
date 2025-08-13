@@ -28,7 +28,6 @@ const verifyJwtTokens = async (req, res, next) => {
     );
     // then it will give true or false accoringly
     //if false invalid access-token
-    console.log(userPayload);
     if (!userPayload) {
       throw new ApiError(401, "Invalid AccessToken!");
     }
@@ -40,7 +39,6 @@ const verifyJwtTokens = async (req, res, next) => {
     console.error("Invalid token :", error);
     next(error);
   }
-
   //and call next()
 };
 
