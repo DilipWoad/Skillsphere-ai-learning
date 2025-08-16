@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { feedVid, loginUser,logoutUser, registerUser } from "../controllers/auth.controller.js";
+import { feedVid, loginUser,logoutUser, refreshTokens, registerUser } from "../controllers/auth.controller.js";
 import { body } from "express-validator";
 import { verifyJwtTokens } from "../middlewares/authMiddleware.js";
 
@@ -39,4 +39,6 @@ router.route("/login").post(
 router.route("/").get(verifyJwtTokens,feedVid)
 
 router.route("/logout").post(verifyJwtTokens,logoutUser)
+
+router.route("/refresh-token").post(refreshTokens);
 export default router;

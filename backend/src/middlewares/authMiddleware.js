@@ -37,6 +37,7 @@ const verifyJwtTokens = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Invalid token :", error);
+    console.log("Invalid token :", error);
     next(error);
   }
   //and call next()

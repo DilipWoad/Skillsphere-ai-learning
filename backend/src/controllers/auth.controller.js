@@ -2,6 +2,12 @@ import { validationResult } from "express-validator";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.models.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
+import generateRefreshAccessTokens from "../utils/generateRefreshAccessTokens.js";
+import {
+  AccessTokenOptions,
+  RefreshTokenOptions,
+} from "../utils/cookiesOptions.js";
 
 const registerUser = async (req, res) => {
   //so values will come from body
@@ -79,20 +85,20 @@ const loginUser = async (req, res) => {
     //store this in the cookies
     console.log(loginUser);
 
-    const AccessTokenOptions = {
-      httpOnly: true,
-      secure: true,
-      sameSite: "Strict",
-      // sameSite: "Strict",
-      maxAge: 24 * 60 * 60 * 1000,
-    };
-    const RefreshTokenOptions = {
-      httpOnly: true,
-      secure: true,
-      sameSite: "Strict",
-      // sameSite: "Strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    };
+    // const AccessTokenOptions = {
+    //   httpOnly: true,
+    //   secure: true,
+    //   sameSite: "Strict",
+    //   // sameSite: "Strict",
+    //   maxAge: 24 * 60 * 60 * 1000,
+    // };
+    // const RefreshTokenOptions = {
+    //   httpOnly: true,
+    //   secure: true,
+    //   sameSite: "Strict",
+    //   // sameSite: "Strict",
+    //   maxAge: 7 * 24 * 60 * 60 * 1000,
+    // };
 
     return res
       .status(200)
@@ -122,8 +128,8 @@ const logoutUser = async (req, res) => {
   // return logout successfull
 
   const user = req.user;
-  if(!user){
-    throw new ApiError(401,"Invalid Request Call")
+  if (!user) {
+    throw new ApiError(401, "Invalid Request Call");
   }
 
   const currentUser = await User.findByIdAndUpdate(user._id, {
@@ -133,7 +139,7 @@ const logoutUser = async (req, res) => {
   });
 
   if (!currentUser) {
-    throw new ApiError(401,"Somthing went wrong while updating refreshtoken");
+    throw new ApiError(401, "Somthing went wrong while updating refreshtoken");
   }
 
   const options = {
@@ -142,11 +148,55 @@ const logoutUser = async (req, res) => {
     sameSite: "Strict",
   };
 
-  res.status(200)
-  .clearCookie("accessToken",options)
-  .clearCookie("refreshToken",options)
-  .json(
-    new ApiResponse(200,{},"User Logout Successfully!")
-  )
+  res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User Logout Successfully!"));
 };
-export { registerUser, loginUser, feedVid,logoutUser };
+
+const refreshTokens = async (req, res) => {
+  //how is the flow
+  //get the refrehtoken from cookie/body
+  const receviedRefreshToken =
+    req.cookies?.refreshToken || req.body?.refreshToken;
+
+  if (!receviedRefreshToken) {
+    throw new ApiError(404, "Refresh Token does not Exists");
+  }
+  // ->user must not have logout
+  // ->this is when accessToken expires
+  // ->so that means user refreshtoken is there
+  // -> so use refreshToken from cookie and match it in the database
+
+  // ->if both matched that means it is a valid user and user has not logined in another device/tabs
+  //  await jwt.verify(tokenInDb,process.env.REFRESH_TOKEN_SECRECT_KEY);
+  const payload = jwt.verify(
+    receviedRefreshToken,
+    process.env.REFRESH_TOKEN_SECRECT_KEY
+  );
+  if (!payload) {
+    throw new ApiError(401, "Invalid Refresh Token!");
+  }
+
+  const user = await User.findById(payload._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (user.refreshToken !== receviedRefreshToken) {
+    throw new ApiError(401, "Refresh token does not matched!");
+  }
+
+  // ->so now verified we can generate new access and refresh token
+  const { refreshToken, accessToken } = await generateRefreshAccessTokens(user);
+  // ->once generated we can then save it in the cookies and refershtoken to the database
+  //now set it in the cookies again
+
+  return res
+    .status(200)
+    .cookie("refreshToken", refreshToken, AccessTokenOptions)
+    .cookie("accessToken", accessToken, RefreshTokenOptions)
+    .json(new ApiResponse(200, {}, "User Tokens Refreshed Successfully!"));
+};
+export { registerUser, loginUser, feedVid, logoutUser,refreshTokens };
