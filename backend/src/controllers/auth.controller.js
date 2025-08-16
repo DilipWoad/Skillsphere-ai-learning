@@ -73,15 +73,15 @@ const loginUser = async (req, res) => {
     const refreshToken = await userExists.generateRefreshToken();
 
     // add refreshToken to the user document
-    const loginUser = await User.findByIdAndUpdate(userExists._id,{
-      refreshToken:refreshToken
+    const loginUser = await User.findByIdAndUpdate(userExists._id, {
+      refreshToken: refreshToken,
     }).select("-password -refreshToken");
     //store this in the cookies
     console.log(loginUser);
 
     const AccessTokenOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV,
+      secure: true,
       sameSite: "Strict",
       // sameSite: "Strict",
       maxAge: 24 * 60 * 60 * 1000,
@@ -113,4 +113,40 @@ const feedVid = async (req, res) => {
 
   return res.status(200).send(`{<pre>${JSON.stringify(user)}</pre>}`);
 };
-export { registerUser, loginUser, feedVid };
+
+const logoutUser = async (req, res) => {
+  //first of all it should be valid user -> auth.middleware
+  // clear cokies both access and refresh token
+  // this find the user with req.user
+  //get the document and set the refreshToken filed as empty string
+  // return logout successfull
+
+  const user = req.user;
+  if(!user){
+    throw new ApiError(401,"Invalid Request Call")
+  }
+
+  const currentUser = await User.findByIdAndUpdate(user._id, {
+    $unset: {
+      refreshToken: 1, //or ""
+    },
+  });
+
+  if (!currentUser) {
+    throw new ApiError(401,"Somthing went wrong while updating refreshtoken");
+  }
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Strict",
+  };
+
+  res.status(200)
+  .clearCookie("accessToken",options)
+  .clearCookie("refreshToken",options)
+  .json(
+    new ApiResponse(200,{},"User Logout Successfully!")
+  )
+};
+export { registerUser, loginUser, feedVid,logoutUser };
