@@ -63,22 +63,28 @@ It provides authentication, user management, and role-based access control as th
 
 ## 📂 Project Structure (Backend)
 backend/
-backend/
-├── src/
-│ ├── controllers/
-│ │ ├── auth.controller.js
-│ │ └── user.controller.js
-│ ├── middlewares/
-│ │ ├── authMiddleware.js
-│ │ └── roleMiddleware.js
-│ ├── models/
-│ │ └── user.models.js
-│ ├── routes/
-│ │ ├── auth.route.js
-│ │ └── user.route.js
-│ └── app.js
-├── server.js
-├── package.json
-├── .env
-└── README.md
+|--src/
+| |---controllers/
+| | |---auth.controller.js
+| | |---user.controller.js
+| |
+| |---middlewares/
+| | |---authMiddleware.js
+| | |---roleMiddleware.js
+| |
+| |---models/
+| | |---user.models.js
+| |
+| |---routes/
+| | |---auth.route.js
+| | |---user.route.js
+| |
+| |---app.js
+|
+|--server.js
+|--package.json
+|--.env
+|--README.md
+
+
 
