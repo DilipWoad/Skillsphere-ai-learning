@@ -11,7 +11,7 @@ import {
 
 const registerUser = async (req, res) => {
   //so values will come from body
-  const { name, email, password } = req.body;
+  const { name, email, password ,role} = req.body;
 
   //check email,name and password shouuld not be empty ->using express-validator
   const errors = validationResult(req);
@@ -36,6 +36,7 @@ const registerUser = async (req, res) => {
     name,
     email,
     password,
+    role
   });
   if (!user) {
     throw new ApiError(400, "Something went wrong while Creating the user!!");
@@ -50,7 +51,7 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password} = req.body;
 
     const errors = validationResult(req);
 

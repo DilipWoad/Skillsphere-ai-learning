@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    role:{
+      type:String,
+      enum:["student","admin","instructor"],
+      default:"student"
+    },
     refreshToken:{
       type:String
     }
@@ -52,7 +57,8 @@ userSchema.methods.generateAccessToken = async function(){
         {
             _id:this._id,
             email:this.email,
-            name:this.name
+            name:this.name,
+            role:this.role
         },
         process.env.ACCESS_TOKEN_SECRECT_KEY,
         {
