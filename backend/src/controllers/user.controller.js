@@ -41,6 +41,7 @@ const dashboard = async (req, res) => {
   }
 };
 
+//only by Admin
 const getAllUsers = async (req, res) => {
   try {
     //ONLY admin can get this
@@ -69,6 +70,7 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+//only by Admin
 const getUserById = async (req, res) => {
   const paramsResult = validationResult(req);
   console.log(paramsResult);
@@ -79,7 +81,7 @@ const getUserById = async (req, res) => {
   // if (!mongoose.isValidObjectId(id)) {
   //   throw new ApiError(401, "Invalid user Id");
   // }
-  const {id} = req.params;
+  const { id } = req.params;
   //check if it exists
   const user = await User.findById(id).select("-password -refreshToken");
   if (!user) {
@@ -91,4 +93,70 @@ const getUserById = async (req, res) => {
     .json(new ApiResponse(200, user, "User data featched Successfully!"));
 };
 
-export { getUserProfile, dashboard, getAllUsers, getUserById };
+//only by Admin
+const updateUserDetails = async (req, res) => {
+  const { name, role } = req.body;
+  const { id } = req.params;
+  //feilds are already verified
+  //also the id params
+  const fieldsResult = validationResult(req);
+  if (!fieldsResult.isEmpty()) {
+    throw new ApiError(401, fieldsResult.errors[0].msg);
+  }
+
+  //now find user doc
+  const userDoc = await User.findById(id);
+  if (!userDoc) {
+    throw new ApiError(404, "User does not Exists!!");
+  }
+
+  //if exists update the document
+  const user = await User.findByIdAndUpdate(
+    id,
+    {
+      role,
+      name,
+    },
+    { new: true }
+  ).select("-password -refreshToken");
+  if (!user) {
+    throw new ApiError(
+      501,
+      "Somthing went wrong while updating the User details"
+    );
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "User data updated Successfully!!"));
+};
+
+//only by Admin
+const deleteUser = async (req, res) => {
+  //verify as admin on the middleware
+  //then id is validated by the express-validator
+  const { id } = req.params;
+  const result = validationResult(req);
+  //means error are stored
+  if (!result.isEmpty()) {
+    throw new ApiError(401, result.errors[0].msg);
+  }
+
+  const user = await User.findByIdAndDelete(id);
+  console.log("deleted User : ", user);
+  if (!user) {
+    throw new ApiError(501, "Somthing went wrong while deleting the user");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "User Deleted Successfully!"));
+};
+
+export {
+  getUserProfile,
+  dashboard,
+  getAllUsers,
+  getUserById,
+  updateUserDetails,
+  deleteUser
+};
