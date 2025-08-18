@@ -82,7 +82,7 @@ const loginUser = async (req, res) => {
     // add refreshToken to the user document
     const loginUser = await User.findByIdAndUpdate(userExists._id, {
       refreshToken: refreshToken,
-    }).select("-password -refreshToken");
+    }).select("-password -refreshToken -role");
     //store this in the cookies
     console.log(loginUser);
 
