@@ -49,7 +49,13 @@ It provides authentication, user management, and role-based access control as th
   - `feat(user): add user controller and routes`
   - `feat(auth): add role-based middleware for access control`
 
----
+### ✅ Day 6 – Admin User Management
+- **New Endpoints (Admin only):**
+  - `GET /api/v1/users` → List all users.
+  - `GET /api/v1/users/:id` → Fetch user by ID.
+  - `PUT /api/v1/users/:id` → Update user role or details.
+  - `DELETE /api/v1/users/:id` → Delete user.
+- Ensured logged-in users can only fetch their own data via `/api/v1/users/me`.
 
 ## 🔐 Authentication Flow
 1. User registers → password is hashed with bcrypt → stored in DB  
@@ -58,6 +64,12 @@ It provides authentication, user management, and role-based access control as th
    - **Refresh Token** (longer-lived, also stored in cookie & DB)  
 3. Protected routes use **JWT middleware** to validate access token  
 4. Role-based middleware ensures only specific roles can access certain APIs  
+
+## 🔑 Notes
+- Regular users → can only view/update their own profile.
+- Admins → can manage all users (CRUD).
+- Error handling with custom `ApiError` and `ApiResponse` classes.
+- Code structured for scalability and production readiness.
 
 ---
 
