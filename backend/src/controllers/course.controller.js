@@ -12,7 +12,7 @@ const createCourse = async (req, res) => {
 
     if (!errors.isEmpty()) {
       console.log(errors.array());
-      throw new ApiError(400, "Validation Error",errors.array());
+      throw new ApiError(400, "Validation Error", errors.array());
     }
     //then we can access the body from req
     const { title, description, category } = req.body;
@@ -27,20 +27,21 @@ const createCourse = async (req, res) => {
       throw new ApiError(500, "Failed to create the course in the database.");
     }
     return res
-      .status(200)
-      .json(new ApiResponse(200, course, "Course created Successfully!!"));
+      .status(201)
+      .json(new ApiResponse(201, course, "Course created Successfully!!"));
   } catch (error) {
     if (error.code === 11000) {
-        throw new ApiError(409, "A course with this title already exists."); // 409 Conflict
+      throw new ApiError(409, "A course with this title already exists."); // 409 Conflict
+    }
+
+    //throw the original ApiError to be handled by a global error handler
+    if (error instanceof ApiError) {
+      throw error;//this error is the ApiError response one which was thrown 
+      //this will go to the GlobalError
     }
 
     // If it's not a pre-defined ApiError, wrap it
-    if (!(error instanceof ApiError)) {
-        throw new ApiError(500, "Something went wrong while creating the course");
-    }
-    
-    // Re-throw the original ApiError to be handled by a global error handler
-    throw error;
+    throw new ApiError(500, "Something went wrong while creating the course");
   }
 };
 

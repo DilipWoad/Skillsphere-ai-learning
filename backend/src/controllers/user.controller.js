@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -25,8 +24,11 @@ const getUserProfile = async (req, res) => {
         new ApiResponse(200, userProfile, "User Profile Fetched Successfully")
       );
   } catch (error) {
-    console.log("Error while getting user profile :", error);
-    console.error(error);
+    console.error("Error while getting user profile :", error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(500, "Somthing went wrong whle getting User Deatils");
   }
 };
 
@@ -50,11 +52,9 @@ const getAllUsers = async (req, res) => {
     if (allUserDetails.length === 0) {
       return res
         .status(200)
-        .json(new ApiResponse(200, {}, "No users in the database"));
+        .json(new ApiResponse(200, [], "No users in the database"));
     }
-    // if(!allUserDetails){
-    //   throw new ApiError()
-    // }
+
     return res
       .status(200)
       .json(
@@ -66,90 +66,118 @@ const getAllUsers = async (req, res) => {
       );
   } catch (error) {
     console.error("Error while getting all the user list", error);
-    console.log("Error while getting all the user list", error);
+    throw new ApiError(
+      400,
+      "Somthing Went wrong while fetching All User deatils"
+    );
   }
 };
 
 //only by Admin
 const getUserById = async (req, res) => {
-  const paramsResult = validationResult(req);
-  console.log(paramsResult);
-  if (!paramsResult.isEmpty()) {
-    throw new ApiError(401, paramsResult.errors[0].msg);
+  try {
+    const paramsResult = validationResult(req);
+    if (!paramsResult.isEmpty()) {
+      throw new ApiError(400, "Invalid Id", paramsResult.array());
+    }
+    const { id } = req.params;
+    //check if it exists
+    const user = await User.findById(id).select("-password -refreshToken");
+    if (!user) {
+      throw new ApiError(404, "User does not Exists!");
+    }
+    //found send
+    return res
+      .status(200)
+      .json(new ApiResponse(200, user, "User data featched Successfully!"));
+  } catch (error) {
+    console.error("Error while fetching a User Details : ", error);
+
+    if (error instanceof ApiError) {
+      //error throw by object of error class ->i.e ApiError
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while fetching a User Details"
+    );
   }
-  // console.log(id)
-  // if (!mongoose.isValidObjectId(id)) {
-  //   throw new ApiError(401, "Invalid user Id");
-  // }
-  const { id } = req.params;
-  //check if it exists
-  const user = await User.findById(id).select("-password -refreshToken");
-  if (!user) {
-    throw new ApiError(404, "User does not Exists!");
-  }
-  //found send
-  return res
-    .status(200)
-    .json(new ApiResponse(200, user, "User data featched Successfully!"));
 };
 
 //only by Admin
 const updateUserDetails = async (req, res) => {
-  const { name, role } = req.body;
-  const { id } = req.params;
-  //feilds are already verified
-  //also the id params
-  const fieldsResult = validationResult(req);
-  if (!fieldsResult.isEmpty()) {
-    throw new ApiError(401, fieldsResult.errors[0].msg);
-  }
+  try {
+    const { name, role } = req.body;
+    const { id } = req.params;
+    //feilds are already verified
+    //also the id params
+    const fieldsResult = validationResult(req);
+    if (!fieldsResult.isEmpty()) {
+      throw new ApiError(400, "Invalid Id", fieldsResult.array());
+    }
 
-  //now find user doc
-  const userDoc = await User.findById(id);
-  if (!userDoc) {
-    throw new ApiError(404, "User does not Exists!!");
-  }
+    //now find user doc
+    const userDoc = await User.findById(id);
+    if (!userDoc) {
+      throw new ApiError(404, "User does not Exists!!");
+    }
 
-  //if exists update the document
-  const user = await User.findByIdAndUpdate(
-    id,
-    {
-      role,
-      name,
-    },
-    { new: true }
-  ).select("-password -refreshToken");
-  if (!user) {
+    //if exists update the document
+    const user = await User.findByIdAndUpdate(
+      id,
+      {
+        role,
+        name,
+      },
+      { new: true }
+    ).select("-password -refreshToken");
+    if (!user) {
+      throw new ApiError(500, "Failed to update user details in the database.");
+    }
+    return res
+      .status(200)
+      .json(new ApiResponse(200, user, "User data updated Successfully!!"));
+  } catch (error) {
+    console.error("Error while updating User Details :", error);
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
     throw new ApiError(
       501,
       "Somthing went wrong while updating the User details"
     );
   }
-  return res
-    .status(200)
-    .json(new ApiResponse(200, user, "User data updated Successfully!!"));
 };
 
 //only by Admin
 const deleteUser = async (req, res) => {
-  //verify as admin on the middleware
-  //then id is validated by the express-validator
-  const { id } = req.params;
-  const result = validationResult(req);
-  //means error are stored
-  if (!result.isEmpty()) {
-    throw new ApiError(401, result.errors[0].msg);
-  }
+  try {
+    //verify as admin on the middleware
+    //then id is validated by the express-validator
+    const { id } = req.params;
+    const result = validationResult(req);
+    //means error are stored
+    if (!result.isEmpty()) {
+      throw new ApiError(400, "Invalid Id", result.array());
+    }
 
-  const user = await User.findByIdAndDelete(id);
-  console.log("deleted User : ", user);
-  if (!user) {
-    throw new ApiError(501, "Somthing went wrong while deleting the user");
-  }
+    const user = await User.findByIdAndDelete(id);
+    console.log("deleted User : ", user);
+    if (!user) {
+      throw new ApiError(500, "User does not Exists!!");
+    }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "User Deleted Successfully!"));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "User Deleted Successfully!"));
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(500, "Somthing went wrong while Deleting the User!!");
+  }
 };
 
 export {
@@ -158,5 +186,5 @@ export {
   getAllUsers,
   getUserById,
   updateUserDetails,
-  deleteUser
+  deleteUser,
 };
