@@ -13,7 +13,7 @@ const authorizeRole=(...allowedRoles)=>{
         
         //role not included/present in the allowed role
         if(!allowedRoles.includes(req.user?.role?.trim())){
-            throw new ApiError(403,"Forbidden: Insufficient rights");
+            throw new ApiError(403,"Forbidden: Insufficient rights->You Don't have permission to access this Api");
         }
         return next();
     }

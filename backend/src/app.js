@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { globalErrorHandling } from "./middlewares/error.middleware.js";
+
 
 export const app = express();
 
@@ -25,7 +27,14 @@ app.use(cookieParser())
 
 import authRouter from "./routes/auth.route.js";
 import userRouter from "./routes/user.route.js";
+import courseRouter from "./routes/course.route.js";
 
 
 app.use("/api/v1/auths",authRouter);
 app.use("/api/v1/users",userRouter);
+app.use("/api/v1/courses",courseRouter);
+
+
+
+//globalError Handling
+app.use(globalErrorHandling);
