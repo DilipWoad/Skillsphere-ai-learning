@@ -62,4 +62,30 @@ const getAllCourses = async (req, res) => {
   }
 };
 
-export { createCourse, getAllCourses };
+const getCourseById = async(req,res)=>{
+    try {
+        //verfiyJwt
+        //id validation by express-validtor
+        const errors = validationResult(req);
+        if(!errors.isEmpty()){
+            throw new ApiError(400,"Invalid ID",errors.array());
+        }
+        const {id} = req.params;
+        //find if course exists
+        const course = await Course.findById(id);
+        if(!course){
+            throw new ApiError(404,"Course does not exists!!")
+        }
+        //if present send it
+        return res.status(200).json(new ApiResponse(200,course,"Course fetched Successfully!!"))
+    } catch (error) {
+        console.error("Error while fetching a course : ",error)
+        if(error instanceof ApiError){
+            throw error;
+        }
+
+        throw new ApiError(500,"Something went wrong while Fetching a course!!")
+    }
+}
+
+export { createCourse, getAllCourses,getCourseById };
