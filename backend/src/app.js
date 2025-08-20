@@ -28,11 +28,13 @@ app.use(cookieParser())
 import authRouter from "./routes/auth.route.js";
 import userRouter from "./routes/user.route.js";
 import courseRouter from "./routes/course.route.js";
+import enrollmentRouter from "./routes/enrollment.route.js";
 
 
 app.use("/api/v1/auths",authRouter);
 app.use("/api/v1/users",userRouter);
 app.use("/api/v1/courses",courseRouter);
+app.use("/api/v1/enrollments",enrollmentRouter);
 
 
 
