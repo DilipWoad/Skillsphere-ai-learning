@@ -15,13 +15,14 @@ const createCourse = async (req, res) => {
       throw new ApiError(400, "Validation Error", errors.array());
     }
     //then we can access the body from req
-    const { title, description, category } = req.body;
+    const { title, description, category, price } = req.body;
 
     const course = await Course.create({
       title,
       description,
       instructor: req.user._id,
       category: category || "",
+      price,
     });
     if (!course) {
       throw new ApiError(500, "Failed to create the course in the database.");
@@ -47,7 +48,9 @@ const createCourse = async (req, res) => {
 
 const getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.find();
+    const courses = await Course.find({
+      published: true,
+    });
 
     if (courses.length == 0) {
       return res
@@ -72,7 +75,10 @@ const getCourseById = async (req, res) => {
     }
     const { id } = req.params;
     //find if course exists
-    const course = await Course.findById(id);
+    const course = await Course.findOne({
+      _id: id,
+      published: true,
+    });
     if (!course) {
       throw new ApiError(404, "Course does not exists!!");
     }
@@ -101,29 +107,28 @@ const updateCourse = async (req, res) => {
       //can be params too
       throw new ApiError(400, "Feilds cannot be Empty!!", errors.array());
     }
-    const { title, description, category } = req.body;
+    const { title, description, category,price } = req.body;
     const { id } = req.params;
 
-    const updatedCourse = await Course.findByIdAndUpdate(
-      id,
-      {
-        title,
-        description,
-        category,
-      },
-      { new: true }
-    );
-
-    if (!updatedCourse) {
-      throw new ApiError(404, "Course does not Exists!!");
+    const course = await Course.findById(id);
+    if(!course){
+      throw new ApiError(404,"Course does not Exists.");
     }
+
+
+     if (title) course.title = title;
+    if (description) course.description = description;
+    if (category) course.category = category;
+    if (price !== undefined) course.price = price;
+
+    await course.save();
 
     return res
       .status(200)
       .json(
         new ApiResponse(
           200,
-          updateCourse,
+          course,
           "Course details updated successfully!!"
         )
       );
@@ -141,6 +146,61 @@ const updateCourse = async (req, res) => {
   }
 };
 
+const togglePublished = async (req, res) => {
+  try {
+    //verifyJWT
+    //authorize call
+    //params check
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ApiError(401, "Invalid course Id.");
+    }
+    //check course exists
+    const { id } = req.params;
+    const course = await Course.findById(id);
+    if (!course) throw new ApiError(404, "Course does not exist");
+    course.published = !course.published;
+    await course.save();
+
+    // const course = await Course.findByIdAndUpdate(
+    //   id,
+    //   {
+    //     $set: {
+    //       published: !this.published,
+    //     },
+    //   },
+    //   { new: true }
+    // );
+
+    // if (!course) {
+    //   throw new ApiError(404, "Course does not exists");
+    // }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          course,
+          `Course ${
+            course.published ? "published" : "unpublished"
+          } successfully!`
+        )
+      );
+  } catch (error) {
+    console.error("Error while toggling published course : ", error);
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while Toggling published course."
+    );
+  }
+};
+
 const deleteCourse = async (req, res) => {
   try {
     //valid JWT
@@ -153,7 +213,6 @@ const deleteCourse = async (req, res) => {
     }
 
     const { id } = req.params;
-
     const course = await Course.findByIdAndDelete(id);
 
     if (!course) {
@@ -182,4 +241,5 @@ export {
   getCourseById,
   deleteCourse,
   updateCourse,
+  togglePublished,
 };

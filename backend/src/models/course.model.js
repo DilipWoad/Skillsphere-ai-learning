@@ -14,14 +14,21 @@ const courseSchema = new mongoose.Schema(
     instructor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required: true,
     },
     category: {
       type: String,
+    },
+    price: {
+      type: Number,
+      default: 0,
+    },
+    published: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
 );
 
-
-
-export const Course = mongoose.model("Course",courseSchema);
+export const Course = mongoose.model("Course", courseSchema);
