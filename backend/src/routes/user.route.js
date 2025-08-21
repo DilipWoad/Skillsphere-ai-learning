@@ -10,8 +10,10 @@ import {
 } from "../controllers/user.controller.js";
 import { authorizeRole } from "../middlewares/roleMiddleware.js";
 
-import { param, body } from "express-validator";
-const allowedRoles = ["admin", "student", "instructor"];
+import {
+  updateUserDetailsValidations,
+  userIdValidation,
+} from "../validators/user.validator.js";
 
 const router = Router();
 
@@ -24,28 +26,13 @@ router.route("/").get(authorizeRole("admin"), getAllUsers);
 
 router
   .route("/:id")
-  .get(
-    authorizeRole("admin"),
-    param("id").isMongoId().withMessage("Invalid user Id"),
-    getUserById
-  )
+  .get(authorizeRole("admin"), userIdValidation, getUserById)
   .patch(
     authorizeRole("admin"),
-    param("id").isMongoId().withMessage("Invalid user Id"),
-    [
-      body("name").notEmpty().withMessage("Name cannot be Empty"),
-      body("role")
-        .notEmpty()
-        .withMessage("Role is Required")
-        .isIn(allowedRoles)
-        .withMessage(`Role must be one of: ${allowedRoles.join(", ")}`),
-    ],
+    userIdValidation,
+    updateUserDetailsValidations,
     updateUserDetails
   )
-  .delete(
-    authorizeRole("admin"),
-    param("id").isMongoId().withMessage("Invalid user Id"),
-    deleteUser
-  );
+  .delete(authorizeRole("admin"), userIdValidation, deleteUser);
 
 export default router;

@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { verifyJwtTokens } from "../middlewares/authMiddleware.js";
 import { authorizeRole } from "../middlewares/roleMiddleware.js";
-import { body, param } from "express-validator";
 import {
   createCourse,
   deleteCourse,
@@ -10,6 +9,11 @@ import {
   togglePublished,
   updateCourse,
 } from "../controllers/course.controller.js";
+import {
+  courseIdValidation,
+  createCourseValidations,
+  updateCourseValidations,
+} from "../validators/course.validator.js";
 const router = Router();
 
 router.use(verifyJwtTokens);
@@ -18,55 +22,26 @@ router
   .route("/")
   .post(
     authorizeRole("admin", "instructor"),
-    [
-      body("title").notEmpty().withMessage("Title cannot be Empty!!"),
-      body("description")
-        .notEmpty()
-        .withMessage("Description cannot be Empty!!"),
-    ],
+    createCourseValidations,
     createCourse
   )
   .get(getAllCourses);
 
 router
   .route("/:id/publish")
-  .patch(
-    authorizeRole("instructor"),
-    param("id").isMongoId().withMessage("Invalid Course Id."),
-    togglePublished
-  );
+  .patch(authorizeRole("instructor"), courseIdValidation, togglePublished);
 
 router
   .route("/:id")
-  .get(param("id").isMongoId().withMessage("Invalid Course Id."), getCourseById)
+  .get(courseIdValidation, getCourseById)
   .patch(
     authorizeRole("admin", "instructor"),
-    [
-      param("id").trim().isMongoId().withMessage("Invalid Course Id."),
-      body("title")
-        .optional()
-        .trim()
-        .notEmpty()
-        .withMessage("Title cannot be Empty!!"),
-      body("description")
-        .optional()
-        .trim()
-        .notEmpty()
-        .withMessage("Description cannot be Empty!!"),
-      body("category")
-        .optional()
-        .isString()
-        .withMessage("Category must be a string."),
-      body("price")
-        .optional()
-        .isFloat({ min: 0 })
-        .withMessage("Price must be a positive number."),
-    ],
+    updateCourseValidations,
     updateCourse
   )
   .delete(
     authorizeRole("admin", "instructor"),
-    param("id").isMongoId().withMessage("Invalid Course Id."),
+    courseIdValidation,
     deleteCourse
   );
 export default router;
