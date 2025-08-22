@@ -9,14 +9,17 @@ import {
 } from "../controllers/enrollment.controller.js";
 
 import { enrollmentCourseIdValidation } from "../validators/enrollment.validator.js";
+import { USER_ROLES } from "../constant.js";
+
+const { ADMIN, STUDENT, INSTRUCTOR } = USER_ROLES;
 
 const router = Router();
 
 router.use(verifyJwtTokens);
 router
   .route("/:courseId")
-  .post(authorizeRole("student"), enrollmentCourseIdValidation, enrollInCourse)
-  .patch(authorizeRole("student"), enrollmentCourseIdValidation, markAsComplete);
-router.route("/me").get(authorizeRole("student"), getMyEnrollments);
-router.route("/").get(authorizeRole("admin"), getAllEnrollments);
+  .post(authorizeRole(STUDENT), enrollmentCourseIdValidation, enrollInCourse)
+  .patch(authorizeRole(STUDENT), enrollmentCourseIdValidation, markAsComplete);
+router.route("/me").get(authorizeRole(STUDENT), getMyEnrollments);
+router.route("/").get(authorizeRole(ADMIN), getAllEnrollments);
 export default router;

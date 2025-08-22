@@ -14,14 +14,16 @@ import {
   createCourseValidations,
   updateCourseValidations,
 } from "../validators/course.validator.js";
+import { USER_ROLES } from "../constant.js";
 const router = Router();
 
+const {STUDENT,INSTRUCTOR,ADMIN} = USER_ROLES;
 router.use(verifyJwtTokens);
 //post for admin/instructor
 router
   .route("/")
   .post(
-    authorizeRole("admin", "instructor"),
+    authorizeRole(ADMIN,INSTRUCTOR),
     createCourseValidations,
     createCourse
   )
@@ -29,18 +31,18 @@ router
 
 router
   .route("/:id/publish")
-  .patch(authorizeRole("instructor"), courseIdValidation, togglePublished);
+  .patch(authorizeRole(INSTRUCTOR), courseIdValidation, togglePublished);
 
 router
   .route("/:id")
   .get(courseIdValidation, getCourseById)
   .patch(
-    authorizeRole("admin", "instructor"),
+    authorizeRole(ADMIN,INSTRUCTOR),
     updateCourseValidations,
     updateCourse
   )
   .delete(
-    authorizeRole("admin", "instructor"),
+    authorizeRole(ADMIN,INSTRUCTOR),
     courseIdValidation,
     deleteCourse
   );

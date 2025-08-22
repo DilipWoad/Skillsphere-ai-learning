@@ -1,4 +1,5 @@
 import { Course } from "../models/course.model.js";
+import { deleteCourseService, updateCourseService } from "../services/course.service.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { validationResult } from "express-validator";
@@ -98,39 +99,11 @@ const getCourseById = async (req, res) => {
 
 const updateCourse = async (req, res) => {
   try {
-    //validateJwt
-    //authorize(admin/instructor)
-    //body(title,description,category)
-    //title and descripiton can't be empty ->category can be
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      //can be params too
-      throw new ApiError(400, "Feilds cannot be Empty!!", errors.array());
-    }
-    const { title, description, category,price } = req.body;
-    const { id } = req.params;
-
-    const course = await Course.findById(id);
-    if(!course){
-      throw new ApiError(404,"Course does not Exists.");
-    }
-
-
-     if (title) course.title = title;
-    if (description) course.description = description;
-    if (category) course.category = category;
-    if (price !== undefined) course.price = price;
-
-    await course.save();
-
+    const updatedCourse = await updateCourseService(req);
     return res
       .status(200)
       .json(
-        new ApiResponse(
-          200,
-          course,
-          "Course details updated successfully!!"
-        )
+        new ApiResponse(200, updatedCourse, "Course updated successfully!")
       );
   } catch (error) {
     console.error("Error while updating the Course Details : ", error);
@@ -203,22 +176,7 @@ const togglePublished = async (req, res) => {
 
 const deleteCourse = async (req, res) => {
   try {
-    //valid JWT
-    //authorize
-    //params valid
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      //can be params too
-      throw new ApiError(400, "Invalid Id", errors.array());
-    }
-
-    const { id } = req.params;
-    const course = await Course.findByIdAndDelete(id);
-
-    if (!course) {
-      throw new ApiError(404, "Course Does not exists");
-    }
-
+    await deleteCourseService(req);
     return res
       .status(200)
       .json(new ApiResponse(200, {}, "Course Deleted Successfully!!"));
