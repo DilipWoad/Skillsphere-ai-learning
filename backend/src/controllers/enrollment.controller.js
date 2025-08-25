@@ -249,4 +249,75 @@ const markAsComplete = async (req, res) => {
   }
 };
 
-export { enrollInCourse, getAllEnrollments, getMyEnrollments, markAsComplete };
+//for instructor only
+const getEnrolledStudentInCourse = async (req, res) => {
+  try {
+    //verify jwt,
+    //authorize role ->instructor
+    // course id ->params validation
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ApiError(401, "Invalid course ID", errors.array());
+    }
+
+    const { courseId } = req.params;
+ 
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      throw new ApiError(404, "Course does not Exists");
+    }
+    //what if u are not the creator of that course
+    if (course.instructor.toString() !== req.user._id.toString()) {
+      throw new ApiError(409, "You are not the creator of this course");
+    }
+    //if exists find the courses with the courseId,instructor and ID
+    const enrolledStudents = await Enrollment.find({
+     course: courseId,
+    }).populate({
+      path: "student",
+      select: "-refreshToken -password -role",
+    });
+
+    if (enrolledStudents.length === 0) {
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, [], "No students has enrolled to this course")
+        );
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          enrolledStudents,
+          "Students enrolled to your course, fetched Successfully"
+        )
+      );
+  } catch (error) {
+    console.error(
+      "Error while fechting enrolled student to the course : ",
+      error
+    );
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while Fetching enrolled student to a course!"
+    );
+  }
+};
+
+export {
+  enrollInCourse,
+  getAllEnrollments,
+  getMyEnrollments,
+  markAsComplete,
+  getEnrolledStudentInCourse,
+};

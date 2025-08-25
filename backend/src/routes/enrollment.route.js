@@ -4,6 +4,7 @@ import { authorizeRole } from "../middlewares/roleMiddleware.js";
 import {
   enrollInCourse,
   getAllEnrollments,
+  getEnrolledStudentInCourse,
   getMyEnrollments,
   markAsComplete,
 } from "../controllers/enrollment.controller.js";
@@ -22,4 +23,11 @@ router
   .patch(authorizeRole(STUDENT), enrollmentCourseIdValidation, markAsComplete);
 router.route("/me").get(authorizeRole(STUDENT), getMyEnrollments);
 router.route("/").get(authorizeRole(ADMIN), getAllEnrollments);
+router
+  .route("/course/:courseId")
+  .get(
+    authorizeRole(INSTRUCTOR),
+    enrollmentCourseIdValidation,
+    getEnrolledStudentInCourse
+  );
 export default router;
