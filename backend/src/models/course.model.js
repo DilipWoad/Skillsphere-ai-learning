@@ -27,6 +27,28 @@ const courseSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    lessons:[{
+      title:{
+        type:String,
+        required:true
+      },
+      content:{
+        type:String,
+        required:true
+      },
+      videoUrl:{
+        type:String,
+        required:true
+      },
+      order:{
+        type:Number,
+        default:1
+      },
+      createdAt:{
+        type:Date,
+        default:Date.now()
+      }
+    }]
   },
   { timestamps: true }
 );

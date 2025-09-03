@@ -10,7 +10,7 @@ const courseIdValidation = param("id")
   .withMessage("Invalid Course Id.");
 
 const updateCourseValidations = [
-  param("id").trim().isMongoId().withMessage("Invalid Course Id."),
+  // param("id").trim().isMongoId().withMessage("Invalid Course Id."),
   body("title")
     .optional()
     .trim()
@@ -31,4 +31,39 @@ const updateCourseValidations = [
     .withMessage("Price must be a positive number."),
 ];
 
-export { createCourseValidations, courseIdValidation, updateCourseValidations };
+// Lesson Validator
+const addCourseLessonValidation = [
+  body("title").notEmpty().withMessage("Lesson title cannot be empty!."),
+  body("content").notEmpty().withMessage("Lesson content cannot be empty!."),
+
+  // body("videoUrl").notEmpty().withMessage("Lesson content cannot be empty!."),
+  //videoUrl should be given by cloudinary -> during the controllor is running
+  //before this the middleware will send file to the server
+];
+
+const lessonIdValidation = param("lessonId")
+  .isMongoId()
+  .withMessage("Invalid Lesson Id.");
+
+const updateCourseLessonValidation = [
+  body("title")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Lesson title cannot be empty!."),
+  body("content")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Lesson content cannot be empty!."),
+    //maybe videoUrl too 
+];
+
+export {
+  createCourseValidations,
+  courseIdValidation,
+  updateCourseValidations,
+  addCourseLessonValidation,
+  lessonIdValidation,
+  updateCourseLessonValidation,
+};

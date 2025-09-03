@@ -1,5 +1,9 @@
 import { Course } from "../models/course.model.js";
-import { deleteCourseService, updateCourseService } from "../services/course.service.js";
+import { Enrollment } from "../models/enrollment.model.js";
+import {
+  deleteCourseService,
+  updateCourseService,
+} from "../services/course.service.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { validationResult } from "express-validator";
@@ -193,6 +197,255 @@ const deleteCourse = async (req, res) => {
   }
 };
 
+// Here it will be Course Lessons Controllers
+const addLesson = async (req, res) => {
+  try {
+    //for adding a lesson to a course
+    //1)verfiy jwt
+    //2)authorized for Instructor role
+    //3)correct couseId
+    //4)check validation result using express-validator
+    //5)validation includes ->title,content,videourl,order
+    //6)and course owner should be the current loggedIn Instructor
+    //7)
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ApiError(401, "Invalid feilds Info.", errors.array());
+    }
+    const currentInstructor = req.user;
+    const { id } = req.params;
+    const { title, content, videoUrl, order } = req.body;
+
+    //find course using id
+    const course = await Course.findById(id);
+    if (!course) {
+      throw new ApiError(404, "Course does not exists.");
+    }
+    //if exists match the owner with current instructor
+    if (course.instructor.toString() !== currentInstructor._id.toString()) {
+      throw new ApiError(409, "You don't have permission.");
+    }
+    //check the order
+    let lessonOrder = order;
+    if (lessonOrder === undefined) {
+      //then increment the lesson-order by 1;
+      lessonOrder = course.lessons.length + 1;
+    }
+    //make a lessonObj
+    const lesson = {
+      title,
+      content,
+      videoUrl,
+      order: lessonOrder,
+    };
+    //now we can push in the copurse ->lesson[] array
+    course.lessons.push(lesson);
+    await course.save();
+
+    return res
+      .status(201)
+      .json(
+        new ApiResponse(
+          201,
+          course,
+          `Lesson No. ${lessonOrder} Added sucessfully to the course ${course.title}`
+        )
+      );
+  } catch (error) {
+    console.error("Error while adding lesson to the course. : ", error);
+
+    //if error comming from the ApiError
+    if (error instanceof ApiError) {
+      //then throw the ApiError to the global error
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while adding lesson to the Course."
+    );
+  }
+};
+
+const updateLesson = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ApiError(401, "Invalid feilds Info.", errors.array());
+    }
+    const currentInstructor = req.user;
+    const { id, lessonId } = req.params;
+    const { title, content } = req.body;
+
+    //find course using id
+    const course = await Course.findById(id);
+    if (!course) {
+      throw new ApiError(404, "Course does not exists.");
+    }
+    //if exists match the owner with current instructor
+    if (course.instructor.toString() !== currentInstructor._id.toString()) {
+      throw new ApiError(409, "You don't have permission.");
+    }
+
+    //check if this lesson exists in the course
+    const lessonToUpdate = course.lessons.find(
+      (lesson) => lesson._id.toString() === lessonId
+    );
+
+    if (!lessonToUpdate) {
+      throw new ApiError(404, "Lesson does not exists in the Course.");
+    }
+
+    //update the lessonObj
+    lessonToUpdate.title = title;
+    lessonToUpdate.content = content;
+
+    //save
+    await course.save();
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          course,
+          `Lesson "${lessonToUpdate.title}" updated successfully.`
+        )
+      );
+  } catch (error) {
+    console.error("Error while updating lesson to the course. : ", error);
+
+    //if error comming from the ApiError
+    if (error instanceof ApiError) {
+      //then throw the ApiError to the global error
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while updating lesson to the Course."
+    );
+  }
+};
+
+const deleteLesson = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ApiError(401, "Invalid Ids.", errors.array());
+    }
+    const currentInstructor = req.user;
+    const { id, lessonId } = req.params;
+
+    //find course using id
+    const course = await Course.findById(id);
+    if (!course) {
+      throw new ApiError(404, "Course does not exists.");
+    }
+    //if exists match the owner with current instructor
+    if (course.instructor.toString() !== currentInstructor._id.toString()) {
+      throw new ApiError(409, "You don't have permission.");
+    }
+
+    //check if this lesson exists in the course
+
+    const lessonExists = course.lessons.find(
+      (lesson) => lesson._id.toString() !== lessonId
+    );
+
+    if (!lessonExists) {
+      throw new ApiError(404, "Lesson does not exists in the Course.");
+    }
+
+    //delete the lessonObj by filter
+    course.lessons = course.lessons.filter(
+  (lesson) => lesson._id.toString() !== lessonId // Keep lessons that DON'T match
+);
+    // course.lessons.filter((lesson) => lesson._id.toString() === lessonId);
+    //save
+    await course.save();
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          [],
+          `Lesson "${lessonExists.title}" Deleted successfully from the ${course.title}.`
+        )
+      );
+  } catch (error) {
+    console.error("Error while deleting a lesson from the course. : ", error);
+
+    //if error comming from the ApiError
+    if (error instanceof ApiError) {
+      //then throw the ApiError to the global error
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while deleting a lesson from the Course."
+    );
+  }
+};
+
+const getCourseLessons = async (req, res) => {
+  try {
+    //verifyJWT
+    //can be seen by anyone-> no auth
+    //courseId check
+    //validation -> xpress-validator
+    console.log("Hellio")
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ApiError(401, "Invalid Id", errors.array());
+    }
+    const { id } = req.params;
+    const user = req.user;
+    //find course
+    const course = await Course.findById(id);
+    if (!course) {
+      throw new ApiError(404, "Course does not Exists");
+    }
+    //check if course is published or not
+    if(!course.published){
+      throw new ApiError(409,"Course is private or unpublished by the instructor")
+    }
+    //check if current user  has enrolled to the course
+    const isCurrentStudentEnrolled = await Enrollment.findOne({
+      course: id,
+      student: user._id,
+    });
+    if (!isCurrentStudentEnrolled) {
+      throw new ApiError(409, "You are not Enrolled to the Course.");
+    }
+    //if yes -> then procced to show all the lesson array
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          course.lessons,
+          "Course Lessons fetched Successfully!"
+        )
+      );
+  } catch (error) {
+    console.error("Error while getting course lessons. : ", error);
+
+    //if error comming from the ApiError
+    if (error instanceof ApiError) {
+      //then throw the ApiError to the global error
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while fetching lessons from the Course."
+    );
+  }
+};
+
 export {
   createCourse,
   getAllCourses,
@@ -200,4 +453,9 @@ export {
   deleteCourse,
   updateCourse,
   togglePublished,
+  //lessons-controller
+  addLesson,
+  updateLesson,
+  deleteLesson,
+  getCourseLessons,
 };
