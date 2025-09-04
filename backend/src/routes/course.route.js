@@ -12,6 +12,8 @@ import {
   togglePublished,
   updateCourse,
   updateLesson,
+  toggleLessonStatus,
+  getLessonById,
 } from "../controllers/course.controller.js";
 import {
   addCourseLessonValidation,
@@ -72,6 +74,19 @@ router
     courseIdValidation,
     lessonIdValidation,
     deleteLesson
+  ).get(
+    courseIdValidation,
+    lessonIdValidation,
+    getLessonById
+  )
+
+router
+  .route("/:id/lessons/:lessonId/status")
+  .patch(
+    authorizeRole(INSTRUCTOR),
+    courseIdValidation,
+    lessonIdValidation,
+    toggleLessonStatus
   );
 
 export default router;

@@ -44,6 +44,10 @@ const courseSchema = new mongoose.Schema(
         type:Number,
         default:1
       },
+      published:{
+        type:Boolean,
+        default:false
+      },
       createdAt:{
         type:Date,
         default:Date.now()

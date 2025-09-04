@@ -223,7 +223,7 @@ const addLesson = async (req, res) => {
     }
     //if exists match the owner with current instructor
     if (course.instructor.toString() !== currentInstructor._id.toString()) {
-      throw new ApiError(409, "You don't have permission.");
+      throw new ApiError(403, "You don't have permission.");
     }
     //check the order
     let lessonOrder = order;
@@ -284,7 +284,7 @@ const updateLesson = async (req, res) => {
     }
     //if exists match the owner with current instructor
     if (course.instructor.toString() !== currentInstructor._id.toString()) {
-      throw new ApiError(409, "You don't have permission.");
+      throw new ApiError(403, "You don't have permission.");
     }
 
     //check if this lesson exists in the course
@@ -344,7 +344,7 @@ const deleteLesson = async (req, res) => {
     }
     //if exists match the owner with current instructor
     if (course.instructor.toString() !== currentInstructor._id.toString()) {
-      throw new ApiError(409, "You don't have permission.");
+      throw new ApiError(403, "You don't have permission.");
     }
 
     //check if this lesson exists in the course
@@ -359,8 +359,8 @@ const deleteLesson = async (req, res) => {
 
     //delete the lessonObj by filter
     course.lessons = course.lessons.filter(
-  (lesson) => lesson._id.toString() !== lessonId // Keep lessons that DON'T match
-);
+      (lesson) => lesson._id.toString() !== lessonId // Keep lessons that DON'T match
+    );
     // course.lessons.filter((lesson) => lesson._id.toString() === lessonId);
     //save
     await course.save();
@@ -390,45 +390,124 @@ const deleteLesson = async (req, res) => {
   }
 };
 
+const toggleLessonStatus = async (req, res) => {
+  try {
+    //verifyJWT
+    //authorize by Instructur
+    //courseId and lesson Id
+    //
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ApiError(401, "Invalid Id", errors.array());
+    }
+
+    const { id, lessonId } = req.params;
+    const instructor = req.user;
+
+    const course = await Course.findById(id);
+    if (!course) {
+      throw new ApiError(404, "Course does not exists");
+    }
+    //check owner
+    if (course.instructor.toString() !== instructor._id.toString()) {
+      throw new ApiError(403, "You don't have permission.");
+    }
+
+    //find the lesson to be published
+    const lessonToUpdateStatus = course.lessons.find(
+      (lesson) => lesson._id.toString() === lessonId.toString()
+    );
+
+    if (!lessonToUpdateStatus) {
+      throw new ApiError(404, "Lesson does not exists.");
+    }
+
+    lessonToUpdateStatus.published = !lessonToUpdateStatus.published;
+    await course.save();
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, {}, `Lesson ${lessonToUpdateStatus.published ? "published" : "unpublished"} successfully`)
+      );
+  } catch (error) {
+    console.error("Error while updating lesson published status. : ", error);
+
+    //if error comming from the ApiError
+    if (error instanceof ApiError) {
+      //then throw the ApiError to the global error
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while updating lesson published status."
+    );
+  }
+};
+
 const getCourseLessons = async (req, res) => {
   try {
     //verifyJWT
     //can be seen by anyone-> no auth
     //courseId check
     //validation -> xpress-validator
-    console.log("Hellio")
+    console.log("Hellio");
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       throw new ApiError(401, "Invalid Id", errors.array());
     }
     const { id } = req.params;
     const user = req.user;
+    console.log(user)
     //find course
     const course = await Course.findById(id);
     if (!course) {
       throw new ApiError(404, "Course does not Exists");
     }
-    //check if course is published or not
-    if(!course.published){
-      throw new ApiError(409,"Course is private or unpublished by the instructor")
+
+    //for admin or course instructor
+    if (
+      user.role === "admin" ||
+      (user.role === "instructor" &&
+        user._id.toString() === course.instructor.toString())
+    ) {
+      console.log("Its checking here inside")
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            course.lessons,
+            "Course lessons fetched successfully."
+          )
+        );
     }
+    console.log("Its checking here")
+    //check if course is published or not
+    if (!course.published) {
+      throw new ApiError(
+        403,
+        "Course is private or unpublished by the instructor"
+      );
+    }
+
     //check if current user  has enrolled to the course
     const isCurrentStudentEnrolled = await Enrollment.findOne({
       course: id,
       student: user._id,
     });
     if (!isCurrentStudentEnrolled) {
-      throw new ApiError(409, "You are not Enrolled to the Course.");
+      throw new ApiError(403, "You are not Enrolled to the Course.");
     }
+
+    const lessons = course.lessons.filter(
+      (lesson) => lesson.published === true
+    );
     //if yes -> then procced to show all the lesson array
     return res
       .status(200)
       .json(
-        new ApiResponse(
-          200,
-          course.lessons,
-          "Course Lessons fetched Successfully!"
-        )
+        new ApiResponse(200, lessons, "Course Lessons fetched Successfully!")
       );
   } catch (error) {
     console.error("Error while getting course lessons. : ", error);
@@ -446,6 +525,90 @@ const getCourseLessons = async (req, res) => {
   }
 };
 
+const getLessonById = async (req, res) => {
+  try {
+    //verifyJWT
+    //can be seen by anyone-> no auth
+    //courseId check
+    //validation -> xpress-validator
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ApiError(401, "Invalid Id", errors.array());
+    }
+    const { id, lessonId } = req.params;
+    const user = req.user;
+    //find course
+    const course = await Course.findById(id);
+    if (!course) {
+      throw new ApiError(404, "Course does not Exists");
+    }
+
+    //for admin or course instructor
+    if (
+      user.role === "admin" ||
+      (user.role === "instructor" &&
+        user._id.toString() === course.instructor.toString())
+    ) {
+      const lesson = course.lessons.find(
+        (lesson) => lesson._id.toString() === lessonId.toString()
+      );
+      if (!lesson) {
+        throw new ApiError(404, "Lesson does not Exits");
+      }
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, lesson, "Course lessons fetched successfully.")
+        );
+    }
+    //check if course is published or not
+    if (!course.published) {
+      throw new ApiError(
+        403,
+        "Course is private or unpublished by the instructor"
+      );
+    }
+
+    //check if current user  has enrolled to the course
+    const isCurrentStudentEnrolled = await Enrollment.findOne({
+      course: id,
+      student: user._id,
+    });
+    if (!isCurrentStudentEnrolled) {
+      throw new ApiError(403, "You are not Enrolled to the Course.");
+    }
+
+    const lesson = course.lessons.find(
+      (lesson) => lesson._id.toString() === lessonId.toString()
+    );
+    //if yes -> then procced to show all the lesson array
+    if (!lesson) {
+      throw new ApiError(404, "Lesson does not Exits");
+    }
+    if(!lesson.published){
+      throw new ApiError(403, "Lesson you are looking is unpublished.");
+    }
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, lesson, "Course Lessons fetched Successfully!")
+      );
+  } catch (error) {
+    console.error("Error while getting a lesson. : ", error);
+
+    //if error comming from the ApiError
+    if (error instanceof ApiError) {
+      //then throw the ApiError to the global error
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while fetching a lesson from the Course."
+    );
+  }
+};
+
 export {
   createCourse,
   getAllCourses,
@@ -458,4 +621,6 @@ export {
   updateLesson,
   deleteLesson,
   getCourseLessons,
+  toggleLessonStatus,
+  getLessonById
 };
