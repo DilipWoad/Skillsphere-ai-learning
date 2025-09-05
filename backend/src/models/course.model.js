@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import lessonSchema from "./lesson.model.js";
 
 const courseSchema = new mongoose.Schema(
   {
@@ -27,32 +28,9 @@ const courseSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    lessons:[{
-      title:{
-        type:String,
-        required:true
-      },
-      content:{
-        type:String,
-        required:true
-      },
-      videoUrl:{
-        type:String,
-        required:true
-      },
-      order:{
-        type:Number,
-        default:1
-      },
-      published:{
-        type:Boolean,
-        default:false
-      },
-      createdAt:{
-        type:Date,
-        default:Date.now()
-      }
-    }]
+    lessons:[
+      lessonSchema
+    ]
   },
   { timestamps: true }
 );
