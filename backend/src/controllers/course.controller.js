@@ -350,7 +350,7 @@ const deleteLesson = async (req, res) => {
     //check if this lesson exists in the course
 
     const lessonExists = course.lessons.find(
-      (lesson) => lesson._id.toString() !== lessonId
+      (lesson) => lesson._id.toString() == lessonId
     );
 
     if (!lessonExists) {

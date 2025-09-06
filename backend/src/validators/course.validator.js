@@ -59,6 +59,7 @@ const updateCourseLessonValidation = [
     //maybe videoUrl too 
 ];
 
+
 export {
   createCourseValidations,
   courseIdValidation,

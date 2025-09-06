@@ -24,6 +24,7 @@ import {
   updateCourseValidations,
 } from "../validators/course.validator.js";
 import { USER_ROLES } from "../constant.js";
+import { addQuizToLesson, deleteQuiz, getQuizzes, updateQuiz } from "../controllers/quiz.controller.js";
 const router = Router();
 
 const { STUDENT, INSTRUCTOR, ADMIN } = USER_ROLES;
@@ -89,4 +90,31 @@ router
     toggleLessonStatus
   );
 
+  // Quiz Routes
+
+  router.route('/:id/lessons/:lessonId/quizzes').post(
+    authorizeRole(INSTRUCTOR,ADMIN),
+    courseIdValidation,
+    lessonIdValidation,
+    //body
+    addQuizToLesson
+  ).get(
+    courseIdValidation,
+    lessonIdValidation,
+    getQuizzes
+  )
+
+   router.route('/:id/lessons/:lessonId/quizzes/:quizId').patch(
+    authorizeRole(INSTRUCTOR,ADMIN),
+    courseIdValidation,
+    lessonIdValidation,
+    //quizeIdvalidation and body
+    updateQuiz
+   ).delete(
+    authorizeRole(INSTRUCTOR,ADMIN),
+    courseIdValidation,
+    lessonIdValidation,
+    //quizeIdvalidation
+    deleteQuiz
+   )
 export default router;

@@ -26,6 +26,9 @@ const lessonSchema = new mongoose.Schema(
       type: Date,
       default: Date.now(),
     },
+    quizzes:[
+      quizeSchema
+    ]
   },
   { timestamps: true }
 );

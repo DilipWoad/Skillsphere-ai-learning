@@ -108,7 +108,20 @@ const getProgressByCourse = async (req, res) => {
     const progress = await Progress.find({
       course: id,
       student: req.user._id,
-    });
+    }).populate([
+      {
+        path: "student",
+        select: "name email",
+      },
+      {
+        path: "course",
+        select: "title description",
+      },
+      {
+        path: "lesson",
+        select: "title content",
+      },
+    ]);
     console.log(progress);
     if (progress.length === 0) {
       return res
@@ -159,7 +172,9 @@ const instructorGetStudentProgress = async (req, res) => {
 
     // 2️⃣ Get total lessons in this course
     // const totalLessons = await Lesson.countDocuments({ course: id });
-    const totalLessons = course.lessons.filter((lesson)=>lesson.published==true).length
+    const totalLessons = course.lessons.filter(
+      (lesson) => lesson.published == true
+    ).length;
     //check if enrolled
     const enrolled = await Enrollment.find({
       course: id,
