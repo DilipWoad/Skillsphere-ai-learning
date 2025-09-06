@@ -17,9 +17,11 @@ import {
 } from "../controllers/course.controller.js";
 import {
   addCourseLessonValidation,
+  addQuizValidations,
   courseIdValidation,
   createCourseValidations,
   lessonIdValidation,
+  quizIdValidation,
   updateCourseLessonValidation,
   updateCourseValidations,
 } from "../validators/course.validator.js";
@@ -96,7 +98,7 @@ router
     authorizeRole(INSTRUCTOR,ADMIN),
     courseIdValidation,
     lessonIdValidation,
-    //body
+    addQuizValidations,
     addQuizToLesson
   ).get(
     courseIdValidation,
@@ -108,13 +110,14 @@ router
     authorizeRole(INSTRUCTOR,ADMIN),
     courseIdValidation,
     lessonIdValidation,
-    //quizeIdvalidation and body
+    quizIdValidation,
+    addQuizValidations,
     updateQuiz
    ).delete(
     authorizeRole(INSTRUCTOR,ADMIN),
     courseIdValidation,
     lessonIdValidation,
-    //quizeIdvalidation
+    quizIdValidation,
     deleteQuiz
    )
 export default router;

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import quizSchema from "./quize.model.js";
 
 const lessonSchema = new mongoose.Schema(
   {
@@ -27,7 +28,7 @@ const lessonSchema = new mongoose.Schema(
       default: Date.now(),
     },
     quizzes:[
-      quizeSchema
+      quizSchema
     ]
   },
   { timestamps: true }

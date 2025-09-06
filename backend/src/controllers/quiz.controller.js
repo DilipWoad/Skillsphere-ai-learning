@@ -178,7 +178,7 @@ const deleteQuiz = async (req, res) => {
       .json(
         new ApiResponse(
           200,
-          quiz,
+          [],
           "Quiz deleted from the lesson Successfully!."
         )
       );
@@ -218,7 +218,7 @@ const getQuizzes = async (req, res) => {
       student: req.user._id,
     });
 
-    if (req.user.role === "user") {
+    if (req.user.role === "student") {
       if (!enrolled) {
         throw new ApiError(403, "You are not enrolled to the course.");
       }

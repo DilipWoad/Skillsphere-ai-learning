@@ -56,9 +56,52 @@ const updateCourseLessonValidation = [
     .trim()
     .notEmpty()
     .withMessage("Lesson content cannot be empty!."),
-    //maybe videoUrl too 
+  //maybe videoUrl too
 ];
 
+// Quiz validator
+const quizIdValidation = param("quizId")
+  .isMongoId()
+  .withMessage("Invalid Quiz Id.");
+
+const addQuizValidations = [
+  body("question")
+    .trim()
+    .notEmpty()
+    .withMessage("Quiz question cannot be empty!."),
+  body("options")
+    .isArray({ min: 2, max: 4 })
+    .withMessage("Quiz options should be 2,3 or 4."),
+  body("options.*")
+    .trim()
+    .notEmpty()
+    .withMessage("Each option cannot be empty!."),
+  body("correctAnswer")
+    .trim()
+    .notEmpty()
+    .withMessage("Correct Answer is required."),
+];
+
+const updateQuizValidations = [
+  body("question")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Quiz question cannot be empty!."),
+  body("options")
+    .optional()
+    .isArray({ min: 2, max: 4 })
+    .withMessage("Quiz options should be 2,3 or 4."),
+  body("options.*")
+    .trim()
+    .notEmpty()
+    .withMessage("Each option cannot be empty!."),
+  body("correctAnswer")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Correct Answer is required."),
+];
 
 export {
   createCourseValidations,
@@ -67,4 +110,7 @@ export {
   addCourseLessonValidation,
   lessonIdValidation,
   updateCourseLessonValidation,
+  addQuizValidations,
+  updateQuizValidations,
+  quizIdValidation
 };
