@@ -31,6 +31,7 @@ import courseRouter from "./routes/course.route.js";
 import enrollmentRouter from "./routes/enrollment.route.js";
 import instructorRouter from "./routes/instructor.route.js";
 import progressRouter from './routes/progress.route.js';
+import quizRouter from "./routes/quiz.route.js"
 
 
 app.use("/api/v1/auths",authRouter);
@@ -39,6 +40,7 @@ app.use("/api/v1/courses",courseRouter);
 app.use("/api/v1/enrollments",enrollmentRouter);
 app.use("/api/v1/instructors",instructorRouter);
 app.use("/api/v1/progress",progressRouter);
+app.use("/api/v1/quizzes",quizRouter);
 
 //globalError Handling
 app.use(globalErrorHandling);

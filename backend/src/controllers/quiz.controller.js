@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { validationResult } from "express-validator";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Enrollment } from "../models/enrollment.model.js";
+import QuizAttempt from "../models/quizzAttempt.model.js";
 
 const addQuizToLesson = async (req, res) => {
   try {
@@ -176,11 +177,7 @@ const deleteQuiz = async (req, res) => {
     return res
       .status(200)
       .json(
-        new ApiResponse(
-          200,
-          [],
-          "Quiz deleted from the lesson Successfully!."
-        )
+        new ApiResponse(200, [], "Quiz deleted from the lesson Successfully!.")
       );
   } catch (error) {
     console.error("Error while deleting a quiz from the lesson :", error);
@@ -256,4 +253,130 @@ const getQuizzes = async (req, res) => {
   }
 };
 
-export { addQuizToLesson, updateQuiz, deleteQuiz, getQuizzes };
+const submitQuizAnswer = async (req, res) => {
+  try {
+    //verifyjwt
+    //authorize by student only
+    //valid course,lesson and quize id
+    //check if only one option is selected
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ApiError(401, "Invalid Id", errors.array());
+    }
+    const { quizId } = req.params;
+    const { answers, courseId, lessonId } = req.body;
+    //find if course exists
+    const course = await Course.findById(courseId);
+    if (!course) {
+      throw new ApiError(404, "Course does not exists.");
+    }
+
+    //if exits check if user is enrolled
+    const enrolled = await Enrollment.findOne({
+      course: courseId,
+      student: req.user._id,
+    });
+
+    if (!enrolled) {
+      throw new ApiError(403, "You are not enrolled to the course.");
+    }
+    //if it's the owner ,now check if lesson exists
+    const lesson = course.lessons.find(
+      (lesson) => lesson._id.toString() === lessonId
+    ); //<- error chk lessonId.toString()
+    if (!lesson) {
+      throw new ApiError(404, "Lesson does not Exists.");
+    }
+
+    //if quize exists
+    // const quiz = lesson.quizzes.find(
+    //   (quiz) => quiz._id.toString() === quizId.toString()
+    // );\
+
+    // const quiz = lesson.quizzes.id(quizId);
+
+    // if (!quiz) {
+    //   throw new ApiError(404, "Quiz does not Exists");
+    // }
+
+    //quize exits
+    //now create document
+    let score = 0;
+    const processedAnswers = answers
+      .map((ans) => {
+        const ques = lesson.quizzes.id(ans.questionId);
+        if (!ques) throw new ApiError(404, "Quiz does not Exists");
+
+        const isCorrect = ans.optionSelected === ques.correctAnswer;
+        if (isCorrect) score++;
+
+        return {
+          questionId: ans.questionId,
+          optionSelected: ans.optionSelected,
+          isCorrect: isCorrect ? 1 : 0,
+        };
+      })
+      .filter(Boolean);
+
+    const attempt = new QuizAttempt({
+      student: req.user._id,
+      course: courseId,
+      lessonId,
+      quizId,
+      answer: processedAnswers,
+      score,
+    });
+    await attempt.save();
+    return res
+      .status(201)
+      .json(new ApiResponse(201, attempt, "Quiz Submitted Successfully!!"));
+  } catch (error) {
+    console.log("Error while submiting quiz answer :", error);
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(500, "Something went wrong while submitting the answer");
+  }
+};
+
+const getMyQuizAttempts = async (req, res) => {
+  try {
+    //verifyjwt
+    //authorize by student only
+    //valid course,lesson and quize id
+    //check if only one option is selected
+    
+    const attempts = await QuizAttempt.find({
+      student:req.user._id
+    })
+
+    if(attempts.length==0){
+      return res
+      .status(200)
+      .json(new ApiResponse(200, [], "You have not Attempt any Quiz."));
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, attempts, "Attempted quiz fetcheed successfully."));
+  } catch (error) {
+    console.log("Error while fetching user attempted quiz :", error);
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(500, "Something went wrong while fetching user attempted quiz.");
+  }
+};
+
+export {
+  addQuizToLesson,
+  updateQuiz,
+  deleteQuiz,
+  getQuizzes,
+  submitQuizAnswer,
+  getMyQuizAttempts
+};

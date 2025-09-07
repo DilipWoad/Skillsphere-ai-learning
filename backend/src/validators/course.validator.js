@@ -71,7 +71,19 @@ const addQuizValidations = [
     .withMessage("Quiz question cannot be empty!."),
   body("options")
     .isArray({ min: 2, max: 4 })
-    .withMessage("Quiz options should be 2,3 or 4."),
+    .withMessage("Quiz options should be 2,3 or 4.")
+    //and validate if the options are same or not
+    //custom -> make a Set of the options -> this Set will have unique value only
+    .custom((options) => {
+      const uniqueOption = new Set(options);
+      //no this will have unique option in it
+      //so if any duplicate option will be there the size will differ
+      console.log(uniqueOption.size,"compare",options.length)
+      if (uniqueOption.size !== options.length) {
+        throw new Error("Quiz cannot have duplicate options");
+      }
+      return true;
+    }),
   body("options.*")
     .trim()
     .notEmpty()
@@ -79,7 +91,8 @@ const addQuizValidations = [
   body("correctAnswer")
     .trim()
     .notEmpty()
-    .withMessage("Correct Answer is required."),
+    .withMessage("Correct Answer is required.")
+    
 ];
 
 const updateQuizValidations = [
@@ -91,7 +104,16 @@ const updateQuizValidations = [
   body("options")
     .optional()
     .isArray({ min: 2, max: 4 })
-    .withMessage("Quiz options should be 2,3 or 4."),
+    .withMessage("Quiz options should be 2,3 or 4.")
+    .custom((options) => {
+      const uniqueOption = new Set(options);
+      //no this will have unique option in it
+      //so if any duplicate option will be there the size will differ
+      if (uniqueOption.length !== options.length) {
+        throw new Error("Quiz cannot have duplicate options");
+      }
+      return true;
+    }),
   body("options.*")
     .trim()
     .notEmpty()
@@ -103,6 +125,25 @@ const updateQuizValidations = [
     .withMessage("Correct Answer is required."),
 ];
 
+
+const quizSubmitValidations=[
+  body("courseId")
+  .trim()
+  .notEmpty()
+  .withMessage("Course id cannot be empty")
+  .isMongoId()
+  .withMessage("Invalid course Id."),
+  body("lessonId")
+  .trim()
+  .notEmpty()
+  .withMessage("Lesson id cannot be empty")
+  .isMongoId()
+  .withMessage("Invalid course Id."),
+  body("answers")
+  .isArray({min:1})
+  .withMessage("Attempt question cannot be empty"),
+]
+
 export {
   createCourseValidations,
   courseIdValidation,
@@ -112,5 +153,6 @@ export {
   updateCourseLessonValidation,
   addQuizValidations,
   updateQuizValidations,
-  quizIdValidation
+  quizIdValidation,
+  quizSubmitValidations
 };
