@@ -347,20 +347,25 @@ const getMyQuizAttempts = async (req, res) => {
     //authorize by student only
     //valid course,lesson and quize id
     //check if only one option is selected
-    
-    const attempts = await QuizAttempt.find({
-      student:req.user._id
-    })
 
-    if(attempts.length==0){
+    const attempts = await QuizAttempt.find({
+      student: req.user._id,
+    }).sort("-createdAt").populate([
+      { path: "student", select: "name email" },
+      { path: "course", select: "title" },
+    ]);
+
+    if (attempts.length == 0) {
       return res
-      .status(200)
-      .json(new ApiResponse(200, [], "You have not Attempt any Quiz."));
+        .status(200)
+        .json(new ApiResponse(200, [], "You have not Attempt any Quiz."));
     }
 
     return res
       .status(200)
-      .json(new ApiResponse(200, attempts, "Attempted quiz fetcheed successfully."));
+      .json(
+        new ApiResponse(200, attempts, "Attempted quiz fetcheed successfully.")
+      );
   } catch (error) {
     console.log("Error while fetching user attempted quiz :", error);
 
@@ -368,9 +373,167 @@ const getMyQuizAttempts = async (req, res) => {
       throw error;
     }
 
-    throw new ApiError(500, "Something went wrong while fetching user attempted quiz.");
+    throw new ApiError(
+      500,
+      "Something went wrong while fetching user attempted quiz."
+    );
   }
 };
+
+const getAllQuizAttempts = async (req, res) => {
+  try {
+    //verifyjwt
+    //authorize by student only
+    //valid course,lesson and quize id
+    //check if only one option is selected
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ApiError(401, "Invalid Id", errors.array());
+    }
+    const { id, lessonId } = req.params;
+    const course = await Course.findById(id);
+    if (!course) {
+      throw new ApiError(404, "Course does not Exist!");
+    }
+    //check here if he is the instructor
+    if (
+      !(req.user.role === "instructor"
+        ? course.instructor.toString() === req.user._id.toString()
+        : true)
+    ) {
+      throw new ApiError(403, "You don't have permission to access this.");
+    }
+
+    //if course exists check for lesson
+    const lesson = course.lessons.find(
+      (lesson) => lesson._id.toString() === lessonId.toString()
+    );
+    if (!lesson) {
+      throw new ApiError(404, "Lesson does not Exist!");
+    }
+
+    const attempts = await QuizAttempt.find({
+      course: id,
+      lessonId,
+    }).sort("-createdAt").populate([
+      { path: "student", select: "name email" },
+      { path: "course", select: "title" },
+    ]);
+
+    if (attempts.length == 0) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, [], "You have not Attempt any Quiz."));
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, attempts, "Attempted quiz of all student fetcheed successfully.")
+      );
+  } catch (error) {
+    console.log("Error while fetching all user attempted quiz :", error);
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while fetching all user attempted quiz."
+    );
+  }
+};
+
+const getMyLessonQuizAttempts=async(req,res)=>{
+  try {
+    //verifyjwt
+    //authorize by student only
+    //valid course,lesson and quize id
+    //check if only one option is selected
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ApiError(401, "Invalid Id", errors.array());
+    }
+    const { lessonId } = req.params;
+
+    const attempts = await QuizAttempt.find({
+      student: req.user._id,
+      lessonId
+    }).sort("-createdAt").populate([
+      { path: "student", select: "name email" },
+      { path: "course", select: "title" },
+    ]);
+
+    if (attempts.length == 0) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, [], "You have not Attempt any Quiz from the Lesson."));
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, attempts, "Attempted quiz fetcheed successfully.")
+      );
+  } catch (error) {
+    console.log("Error while fetching user attempted quiz :", error);
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while fetching user attempted quiz."
+    );
+  }
+}
+
+const getLatestQuizResult = async(req,res)=>{
+  try {
+    //verifyjwt
+    //authorize by student only
+    //valid course,lesson and quize id
+    //check if only one option is selected
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ApiError(401, "Invalid Id", errors.array());
+    }
+    const { lessonId } = req.params;
+
+    const attempts = await QuizAttempt.find({
+      student: req.user._id,
+      lessonId
+    }).sort("-createdAt").populate([
+      { path: "student", select: "name email" },
+      { path: "course", select: "title" },
+    ])
+
+    if (attempts.length == 0) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, [], "You have not Attempt any Quiz from the Lesson."));
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, attempts[0], "Latest Attempted quiz fetched successfully.")
+      );
+  } catch (error) {
+    console.log("Error while fetching user latest attempted quiz :", error);
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while fetching user latest attempted quiz."
+    );
+  }
+}
 
 export {
   addQuizToLesson,
@@ -378,5 +541,8 @@ export {
   deleteQuiz,
   getQuizzes,
   submitQuizAnswer,
-  getMyQuizAttempts
+  getMyQuizAttempts,
+  getAllQuizAttempts,
+  getMyLessonQuizAttempts,
+  getLatestQuizResult
 };

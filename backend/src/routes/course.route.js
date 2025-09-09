@@ -26,7 +26,13 @@ import {
   updateCourseValidations,
 } from "../validators/course.validator.js";
 import { USER_ROLES } from "../constant.js";
-import { addQuizToLesson, deleteQuiz, getQuizzes, updateQuiz } from "../controllers/quiz.controller.js";
+import {
+  addQuizToLesson,
+  deleteQuiz,
+  getAllQuizAttempts,
+  getQuizzes,
+  updateQuiz,
+} from "../controllers/quiz.controller.js";
 const router = Router();
 
 const { STUDENT, INSTRUCTOR, ADMIN } = USER_ROLES;
@@ -77,11 +83,8 @@ router
     courseIdValidation,
     lessonIdValidation,
     deleteLesson
-  ).get(
-    courseIdValidation,
-    lessonIdValidation,
-    getLessonById
   )
+  .get(courseIdValidation, lessonIdValidation, getLessonById);
 
 router
   .route("/:id/lessons/:lessonId/status")
@@ -92,32 +95,43 @@ router
     toggleLessonStatus
   );
 
-  // Quiz Routes
+// Quiz Routes
 
-  router.route('/:id/lessons/:lessonId/quizzes').post(
-    authorizeRole(INSTRUCTOR,ADMIN),
+router
+  .route("/:id/lessons/:lessonId/quizzes")
+  .post(
+    authorizeRole(INSTRUCTOR, ADMIN),
     courseIdValidation,
     lessonIdValidation,
     addQuizValidations,
     addQuizToLesson
-  ).get(
-    courseIdValidation,
-    lessonIdValidation,
-    getQuizzes
   )
+  .get(courseIdValidation, lessonIdValidation, getQuizzes);
 
-   router.route('/:id/lessons/:lessonId/quizzes/:quizId').patch(
-    authorizeRole(INSTRUCTOR,ADMIN),
+router
+  .route("/:id/lessons/:lessonId/quizzes/:quizId")
+  .patch(
+    authorizeRole(INSTRUCTOR, ADMIN),
     courseIdValidation,
     lessonIdValidation,
     quizIdValidation,
     addQuizValidations,
     updateQuiz
-   ).delete(
-    authorizeRole(INSTRUCTOR,ADMIN),
+  )
+  .delete(
+    authorizeRole(INSTRUCTOR, ADMIN),
     courseIdValidation,
     lessonIdValidation,
     quizIdValidation,
     deleteQuiz
-   )
+  );
+
+router
+  .route("/:id/quiz/:lessonId/attempts")
+  .get(
+    authorizeRole(INSTRUCTOR, ADMIN),
+    courseIdValidation,
+    lessonIdValidation,
+    getAllQuizAttempts
+  );
 export default router;
